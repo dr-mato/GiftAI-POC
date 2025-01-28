@@ -6,3 +6,7 @@ coverage
 requests
 python-dotenv
 httpx
+openai
+python-dotenv
+slowapi
+pytest-mock

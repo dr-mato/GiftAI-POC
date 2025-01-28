@@ -1,7 +1,12 @@
 # app/services.py
 import random
+import openai
 from typing import List
 from .schemas import GiftRecommendation
+from .config import settings
+
+# Initialize OpenAI API
+openai.api_key = settings.OPENAI_API_KEY
 
 def generate_gift_categories(age: int, hobbies: List[str], favorite_tv_shows: List[str], budget: float, relationship: str, additional_preferences: str) -> List[str]:
     """
@@ -28,6 +33,39 @@ def generate_gift_categories(age: int, hobbies: List[str], favorite_tv_shows: Li
     categories = list(set(categories))
     
     return categories
+
+def generate_gift_categories_ai(gift_request) -> List[str]:
+    """
+    Generates gift categories using OpenAI's GPT model based on user input.
+    """
+    prompt = (
+        f"Given the following user preferences, suggest relevant gift categories:\n"
+        f"Age: {gift_request.age}\n"
+        f"Hobbies: {', '.join(gift_request.hobbies)}\n"
+        f"Favorite TV Shows: {', '.join(gift_request.favorite_tv_shows)}\n"
+        f"Budget: ${gift_request.budget}\n"
+        f"Relationship: {gift_request.relationship}\n"
+        f"Additional Preferences: {gift_request.additional_preferences}\n"
+        f"Provide the categories as a comma-separated list."
+    )
+
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci-003",
+            prompt=prompt,
+            max_tokens=50,
+            n=1,
+            stop=None,
+            temperature=0.7,
+        )
+        categories_text = response.choices[0].text.strip()
+        categories = [category.strip() for category in categories_text.split(",")]
+        return categories
+    except Exception as e:
+        # Handle exceptions (e.g., API errors, rate limits)
+        print(f"Error generating categories with AI: {e}")
+        return []
+
 
 def fetch_gift_suggestions(categories: List[str], budget: float) -> List[GiftRecommendation]:
     """
